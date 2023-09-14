@@ -40,11 +40,23 @@ $parse_and_then = fn($parser1, $parser2) => function($input) use ($parser1, $par
 };
 
 
-$pwebos = $parse_and_then($parse_word('we'), $parse_word('bos'));
+$parse_or_else = fn($parser1, $parser2) => function($input) use ($parser1, $parser2) {
+  $output1 = $parser1($input);
+  [$result1] = $output1;
+  if($result1 === Result::Ok) {
+    return $output1;
+  }
+
+  return $parser2($input);
+};
+
+
+$parse_a = $parse_word('a');
+$parse_b = $parse_word('b');
+$parse_a_or_b = $parse_or_else($parse_a, $parse_b);
 echo '<pre>';
-print_r($pwebos('webos revueltos'));
-print_r($pwebos('webos motuleños'));
-print_r($pwebos('longaniza'));
-print_r($pwebos('web'));
+print_r($parse_a_or_b('azz'));
+print_r($parse_a_or_b('bzz'));
+print_r($parse_a_or_b('czz'));
 echo '</pre>';
 ?>
