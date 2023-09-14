@@ -21,7 +21,26 @@ $parse_word = fn($word_to_match) => function($input) use ($word_to_match) {
   return [Result::Ok, $input_start, $input_rest];
 };
 
-$pwebos = $pword('webos');
+
+$parse_and_then = fn($parser1, $parser2) => function($input) use ($parser1, $parser2) {
+  $output1 = $parser1($input);
+  [$result1, $value1, $remaining1] = $output1;
+  if($result1 === Result::Err) {
+    return $output1;
+  }
+
+  $output2 = $parser2($remaining1);
+  [$result2, $value2, $remaining2] = $output2;
+  if($result2 === Result::Err) {
+    return $output2;
+  }
+
+  $combined_value = [$value1, $value2];
+  return [Result::Ok, $combined_value, $remaining2];
+};
+
+
+$pwebos = $parse_and_then($parse_word('we'), $parse_word('bos'));
 print_r($pwebos('webos revueltos'));
 print_r($pwebos('webos motuleños'));
 print_r($pwebos('longaniza'));
