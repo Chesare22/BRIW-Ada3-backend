@@ -41,8 +41,10 @@ $parse_and_then = fn($parser1, $parser2) => function($input) use ($parser1, $par
 
 
 $pwebos = $parse_and_then($parse_word('we'), $parse_word('bos'));
+echo '<pre>';
 print_r($pwebos('webos revueltos'));
 print_r($pwebos('webos motuleños'));
 print_r($pwebos('longaniza'));
 print_r($pwebos('web'));
+echo '</pre>';
 ?>
