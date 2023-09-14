@@ -50,13 +50,23 @@ $parse_or_else = fn($parser1, $parser2) => function($input) use ($parser1, $pars
   return $parser2($input);
 };
 
+$null_safe_callback = fn($callback) => fn($carry, $item) =>
+  $carry === NULL ? $item : $callback($carry, $item);
+
+$parse_choice = fn($parsers) =>
+  array_reduce($parsers, $null_safe_callback($parse_or_else));
+
 
 $parse_a = $parse_word('a');
 $parse_b = $parse_word('b');
+$parse_c = $parse_word('c');
+$parse_b_or_c = $parse_choice([$parse_b, $parse_c]);
+$parse_a_and_then_b_or_c = $parse_and_then($parse_a, $parse_b_or_c);
 $parse_a_or_b = $parse_or_else($parse_a, $parse_b);
 echo '<pre>';
-print_r($parse_a_or_b('azz'));
-print_r($parse_a_or_b('bzz'));
-print_r($parse_a_or_b('czz'));
+print_r($parse_a_and_then_b_or_c('abz'));
+print_r($parse_a_and_then_b_or_c('acz'));
+print_r($parse_a_and_then_b_or_c('qbz'));
+print_r($parse_a_and_then_b_or_c('aqz'));
 echo '</pre>';
 ?>
