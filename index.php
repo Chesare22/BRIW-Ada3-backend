@@ -57,16 +57,47 @@ $p_choice = fn($parsers) =>
   array_reduce($parsers, $null_safe_callback($p_or_else));
 
 
-$parse_a = $p_string('a');
-$parse_b = $p_string('b');
-$parse_c = $p_string('c');
-$parse_b_or_c = $p_choice([$parse_b, $parse_c]);
-$parse_a_and_then_b_or_c = $p_and_then($parse_a, $parse_b_or_c);
-$parse_a_or_b = $p_or_else($parse_a, $parse_b);
+$p_map = fn($mapper) => fn($parser) => function($input) use ($mapper, $parser) {
+  $output = $parser($input);
+  [$result, $value, $remaining] = $output;
+  if($result === Result::Err) {
+    return $output;
+  }
+
+  $mapped_value = $mapper($value);
+  return [Result::Ok, $mapped_value, $remaining];
+};
+
+
+$p_left = function($parser_left, $parser_right) use ($p_and_then, $p_map) {
+  $p_left_then_right = $p_and_then($parser_left, $parser_right);
+  $keep_left = fn($results) => $results[0];
+  
+  return $p_map($keep_left)($p_left_then_right);
+};
+
+
+$p_right = function($parser_left, $parser_right) use ($p_and_then, $p_map) {
+  $p_left_then_right = $p_and_then($parser_left, $parser_right);
+  $keep_right = fn($results) => $results[1];
+  
+  return $p_map($keep_right)($p_left_then_right);
+};
+
+
+$p_between = fn($parser_left, $parser_middle, $parser_right) =>
+  $p_left(
+    $p_right($parser_left, $parser_middle),
+    $parser_right
+  );
+
+
+$p_doublequote = $p_string('"');
+$p_integer = $p_choice(array_map($p_string, array_map('strval', range(0, 9))));
+$p_quoted_integer = $p_between($p_doublequote, $p_integer, $p_doublequote);
 echo '<pre>';
-print_r($parse_a_and_then_b_or_c('abz'));
-print_r($parse_a_and_then_b_or_c('acz'));
-print_r($parse_a_and_then_b_or_c('qbz'));
-print_r($parse_a_and_then_b_or_c('aqz'));
+print_r($p_integer('123'));
+print_r($p_quoted_integer('"1"'));
+print_r($p_quoted_integer('1'));
 echo '</pre>';
 ?>
