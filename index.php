@@ -57,7 +57,7 @@ $p_choice = fn($parsers) =>
   array_reduce($parsers, $null_safe_callback($p_or_else));
 
 
-$p_map = fn($mapper) => fn($parser) => function($input) use ($mapper, $parser) {
+$p_map = fn($mapper, $parser) => function($input) use ($mapper, $parser) {
   $output = $parser($input);
   [$result, $value, $remaining] = $output;
   if($result === Result::Err) {
@@ -73,7 +73,7 @@ $p_left = function($parser_left, $parser_right) use ($p_and_then, $p_map) {
   $p_left_then_right = $p_and_then($parser_left, $parser_right);
   $keep_left = fn($results) => $results[0];
   
-  return $p_map($keep_left)($p_left_then_right);
+  return $p_map($keep_left, $p_left_then_right);
 };
 
 
@@ -81,7 +81,7 @@ $p_right = function($parser_left, $parser_right) use ($p_and_then, $p_map) {
   $p_left_then_right = $p_and_then($parser_left, $parser_right);
   $keep_right = fn($results) => $results[1];
   
-  return $p_map($keep_right)($p_left_then_right);
+  return $p_map($keep_right, $p_left_then_right);
 };
 
 
@@ -120,7 +120,7 @@ $p_one_or_more = fn($parser) => function($input) use ($parser, $p_zero_or_more) 
 
 
 $p_doublequote = $p_string('"');
-$p_integer = $p_map('intval')($p_map('implode')($p_one_or_more($p_choice(array_map($p_string, array_map('strval', range(0, 9)))))));
+$p_integer = $p_map('intval', $p_map('implode', $p_one_or_more($p_choice(array_map($p_string, array_map('strval', range(0, 9)))))));
 $p_quoted_integer = $p_between($p_doublequote, $p_integer, $p_doublequote);
 echo '<pre>';
 print_r($p_integer('123'));
