@@ -10,13 +10,13 @@ $p_string = fn($string_to_match) => function($input) use ($string_to_match) {
     return [Result::Err, "Expecting a string. Got a '$type_of_input' instead", $input];
   }
 
-  $string_to_match_length = strlen($string_to_match);
-  $input_start = substr($input, 0,  $string_to_match_length);
+  $length_of_string_to_match = strlen($string_to_match);
+  $input_start = substr($input, 0,  $length_of_string_to_match);
   if ($input_start !== $string_to_match) {
     return [Result::Err, "Expecting '$string_to_match'. Got '$input_start' instead", $input];
   }
   
-  $input_rest = substr($input, $string_to_match_length);
+  $input_rest = substr($input, $length_of_string_to_match);
   return [Result::Ok, $input_start, $input_rest];
 };
 
