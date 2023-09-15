@@ -1,6 +1,7 @@
 <?php
 include './Result.php';
 include './Maybe.php';
+include './array_foldl1.php';
 
 
 $p_string = fn($string_to_match) => function($input) use ($string_to_match) {
@@ -48,11 +49,9 @@ $p_or_else = fn($parser1, $parser2) => function($input) use ($parser1, $parser2)
   return $parser2($input);
 };
 
-$null_safe_callback = fn($callback) => fn($carry, $item) =>
-  $carry === NULL ? $item : $callback($carry, $item);
 
-$p_choice = fn($parsers) =>
-  array_reduce($parsers, $null_safe_callback($p_or_else));
+$p_choice =
+  $array_foldl1($p_or_else);
 
 
 $p_map = fn($mapper, $parser) => function($input) use ($mapper, $parser) {
