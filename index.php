@@ -92,12 +92,26 @@ $p_between = fn($parser_left, $parser_middle, $parser_right) =>
   );
 
 
+$p_zero_or_more = function($parser) use (&$p_zero_or_more) {
+  return function($input) use (&$p_zero_or_more, $parser) {
+    [$first_result, $first_value, $input_after_first_parse] = $parser($input);
+    if ($first_result === Result::Err) {
+      return [Result::Ok, [], $input];
+    }
+
+    [, $subsequent_values, $remaining_input] = $p_zero_or_more($parser)($input_after_first_parse);
+    $values = array_merge([$first_value], $subsequent_values);
+    return [Result::Ok, $values, $remaining_input];
+  };
+};
+
+
 $p_doublequote = $p_string('"');
-$p_integer = $p_choice(array_map($p_string, array_map('strval', range(0, 9))));
+$p_integer = $p_zero_or_more($p_choice(array_map($p_string, array_map('strval', range(0, 9)))));
 $p_quoted_integer = $p_between($p_doublequote, $p_integer, $p_doublequote);
 echo '<pre>';
 print_r($p_integer('123'));
-print_r($p_quoted_integer('"1"'));
-print_r($p_quoted_integer('1'));
+print_r($p_quoted_integer('"123"'));
+print_r($p_quoted_integer('123'));
 echo '</pre>';
 ?>
