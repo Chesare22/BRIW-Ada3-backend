@@ -123,9 +123,9 @@ $p_doublequote = $p_string('"');
 $p_integer = $p_map('intval', $p_map('implode', $p_one_or_more($p_choice(array_map($p_string, array_map('strval', range(0, 9)))))));
 $p_quoted_integer = $p_between($p_doublequote, $p_integer, $p_doublequote);
 echo '<pre>';
-print_r($p_integer('123'));
-print_r($p_quoted_integer('"123"'));
-print_r($p_quoted_integer('""'));
-print_r($p_quoted_integer('123'));
+var_dump($p_integer('123'));
+var_dump($p_quoted_integer('"123"'));
+var_dump($p_quoted_integer('""'));
+var_dump($p_quoted_integer('123'));
 echo '</pre>';
 ?>
