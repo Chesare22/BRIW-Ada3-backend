@@ -4,6 +4,15 @@ enum Result {
   case Err;
 };
 
+enum Maybe {
+  case Some;
+  case Nothing;
+};
+
+
+$maybe_return = fn($value) =>
+  [Maybe::Some, $value];
+
 
 $p_string = fn($string_to_match) => function($input) use ($string_to_match) {
   $type_of_input = gettype($input);
@@ -119,13 +128,25 @@ $p_one_or_more = fn($parser) => function($input) use ($parser, $p_zero_or_more) 
 };
 
 
+$p_return = fn($value) => fn($input) =>
+  [Result::Ok, $value, $input];
+
+
+$p_optional = fn($parser) =>
+  $p_or_else(
+    $p_map($maybe_return, $parser),
+    $p_return([Maybe::Nothing])
+  );
+
+
 $p_doublequote = $p_string('"');
-$p_integer = $p_map('intval', $p_map('implode', $p_one_or_more($p_choice(array_map($p_string, array_map('strval', range(0, 9)))))));
+$p_digit = $p_choice(array_map($p_string, array_map('strval', range(0, 9))));
+$p_integer = $p_map('intval', $p_map('implode', $p_one_or_more($p_digit)));
 $p_quoted_integer = $p_between($p_doublequote, $p_integer, $p_doublequote);
+$p_optional_semicolon = $p_optional($p_string(';'));
+$p_digit_then_semicolon = $p_and_then($p_digit, $p_optional_semicolon);
 echo '<pre>';
-var_dump($p_integer('123'));
-var_dump($p_quoted_integer('"123"'));
-var_dump($p_quoted_integer('""'));
-var_dump($p_quoted_integer('123'));
+var_dump($p_digit_then_semicolon('1;'));
+var_dump($p_digit_then_semicolon('1'));
 echo '</pre>';
 ?>
