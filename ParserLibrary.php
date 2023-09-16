@@ -126,4 +126,19 @@ $p_optional = fn($parser) =>
     $p_return([Maybe::Nothing])
   );
 
+
+$p_separated_by_1 = function($parser, $separator) use ($p_right, $p_and_then, $p_map, $p_zero_or_more) {
+  $separator_then_parser = $p_right($separator, $parser);
+  return $p_map(
+    fn($values) => array_merge([$values[0]], $values[1]),
+    $p_and_then($parser, $p_zero_or_more($separator_then_parser))
+  );
+};
+
+
+$p_separated_by = fn($parser, $separator) =>
+  $p_or_else(
+    $p_separated_by_1($parser, $separator),
+    $p_return([])
+  );
 ?>
