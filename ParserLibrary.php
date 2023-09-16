@@ -21,6 +21,22 @@ $p_string = fn($string_to_match) => function($input) use ($string_to_match) {
 };
 
 
+$p_satisfy_char = fn($predicate) => function($input) use ($predicate) {
+  $type_of_input = gettype($input);
+  if ($type_of_input !== 'string') {
+    return [Result::Err, "Expecting a string. Got a '$type_of_input' instead", $input];
+  }
+
+  $input_first_char = substr($input, 0, 1);
+  if (!$predicate($input_first_char)) {
+    return [Result::Err, "Unexpected '$input_first_char'", $input];
+  }
+
+  $input_rest = substr($input, 1);
+  return [Result::Ok, $input_first_char, $input_rest];
+};
+
+
 $p_and_then = fn($parser1, $parser2) => function($input) use ($parser1, $parser2) {
   $output1 = $parser1($input);
   [$result1, $value1, $remaining1] = $output1;
@@ -140,5 +156,25 @@ $p_separated_by = fn($parser, $separator) =>
   $p_or_else(
     $p_separated_by_1($parser, $separator),
     $p_return([])
+  );
+
+
+$p_whitespace =
+  $p_satisfy_char('ctype_space'); 
+
+
+$p_zero_or_more_whitespaces =
+  $p_zero_or_more($p_whitespace);
+
+
+$p_one_or_more_whitespaces =
+  $p_one_or_more($p_whitespace);
+
+
+$p_trim = fn($parser) =>
+  $p_between(
+    $p_zero_or_more_whitespaces,
+    $parser,
+    $p_zero_or_more_whitespaces
   );
 ?>
