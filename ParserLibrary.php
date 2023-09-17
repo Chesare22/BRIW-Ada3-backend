@@ -177,4 +177,8 @@ $p_trim = fn($parser) =>
     $parser,
     $p_zero_or_more_whitespaces
   );
+
+
+$p_concatenate = fn($parser) =>
+  $p_map('implode', $parser);
 ?>

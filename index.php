@@ -1,5 +1,5 @@
 <?php
-include './ParserLibrary.php';
+include './ParseQuery.php';
 
 
 $p_doublequote = $p_string('"');
@@ -11,9 +11,9 @@ $p_optional_semicolon = $p_optional($p_string(';'));
 $p_digit_then_semicolon = $p_and_then($p_digit, $p_optional_semicolon);
 $p_digits_separated_by_comma = $p_trim($p_separated_by_1($p_digit, $p_comma));
 echo '<pre>';
-var_dump($p_digits_separated_by_comma('   1 ;'));
-var_dump($p_digits_separated_by_comma(' 1,2;  '));
-var_dump($p_digits_separated_by_comma('\n 1,2,3;'));
-var_dump($p_digits_separated_by_comma('  z;'));
+var_dump($p_terms('Potato AND NOT Chips;'));
+var_dump($p_terms('CADENA(Potato Chips);'));
+var_dump($p_terms('ASereje;'));
+var_dump($p_terms('ASereje;'));
 echo '</pre>';
 ?>
