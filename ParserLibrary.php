@@ -3,6 +3,13 @@ include './Result.php';
 include './Maybe.php';
 include './array_foldl1.php';
 
+# This code is heavily inspired by the "Understanding parser combinators" series, by Scott Wlaschin.
+# You can read the original blog posts here: https://fsharpforfunandprofit.com/series/understanding-parser-combinators/
+# Or watch the summarized talk from the NDC Conference here: https://www.youtube.com/watch?v=RDalzi7mhdY
+
+
+# ---- BASIC PARSERS ----
+
 
 $p_string = fn($string_to_match) => function($input) use ($string_to_match) {
   $type_of_input = gettype($input);
@@ -37,6 +44,32 @@ $p_satisfy_char = fn($predicate) => function($input) use ($predicate) {
 };
 
 
+
+# ---- LIFTERS ----
+# More information about the concept of lifting here: https://fsharpforfunandprofit.com/posts/recipe-part2/
+# and here: https://fsharpforfunandprofit.com/posts/elevated-world/
+
+
+$p_map = fn($mapper, $parser) => function($input) use ($mapper, $parser) {
+  $output = $parser($input);
+  [$result, $value, $remaining] = $output;
+  if($result === Result::Err) {
+    return $output;
+  }
+
+  $mapped_value = $mapper($value);
+  return [Result::Ok, $mapped_value, $remaining];
+};
+
+
+$p_return = fn($value) => fn($input) =>
+  [Result::Ok, $value, $input];
+
+
+
+# ---- PARSER COMBINATORS ----
+
+
 $p_and_then = fn($parser1, $parser2) => function($input) use ($parser1, $parser2) {
   $output1 = $parser1($input);
   [$result1, $value1, $remaining1] = $output1;
@@ -68,18 +101,6 @@ $p_or_else = fn($parser1, $parser2) => function($input) use ($parser1, $parser2)
 
 $p_choice =
   $array_foldl1($p_or_else);
-
-
-$p_map = fn($mapper, $parser) => function($input) use ($mapper, $parser) {
-  $output = $parser($input);
-  [$result, $value, $remaining] = $output;
-  if($result === Result::Err) {
-    return $output;
-  }
-
-  $mapped_value = $mapper($value);
-  return [Result::Ok, $mapped_value, $remaining];
-};
 
 
 $p_left = function($parser_left, $parser_right) use ($p_and_then, $p_map) {
@@ -126,16 +147,6 @@ $p_zero_or_more = function($parser) use (&$p_zero_or_more) {
 };
 
 
-$p_exception = fn($stopper, $parser) => function($input) use ($stopper, $parser) {
-  [$stopper_result] = $stopper($input);
-  if ($stopper_result === Result::Ok) {
-    return [Result::Err, 'Invalid input', $input];
-  }
-
-  return $parser($input);
-};
-
-
 $p_one_or_more = fn($parser) => function($input) use ($parser, $p_zero_or_more) {
   $first_output = $parser($input);
   [$first_result, $first_value, $input_after_first_parse] = $first_output;
@@ -147,10 +158,6 @@ $p_one_or_more = fn($parser) => function($input) use ($parser, $p_zero_or_more) 
     $values = array_merge([$first_value], $subsequent_values);
     return [Result::Ok, $values, $remaining_input];
 };
-
-
-$p_return = fn($value) => fn($input) =>
-  [Result::Ok, $value, $input];
 
 
 $p_optional = fn($parser) =>
@@ -176,6 +183,23 @@ $p_separated_by = fn($parser, $separator) =>
   );
 
 
+$p_exception = fn($stopper, $parser) => function($input) use ($stopper, $parser) {
+  [$stopper_result] = $stopper($input);
+  if ($stopper_result === Result::Ok) {
+    return [Result::Err, 'Invalid input', $input];
+  }
+
+  return $parser($input);
+};
+
+
+$p_concatenate = fn($parser) =>
+  $p_map('implode', $parser);
+
+
+# ---- WHITESPACE PARSERS ----
+
+
 $p_whitespace =
   $p_satisfy_char('ctype_space'); 
 
@@ -194,8 +218,4 @@ $p_trim = fn($parser) =>
     $parser,
     $p_zero_or_more_whitespaces
   );
-
-
-$p_concatenate = fn($parser) =>
-  $p_map('implode', $parser);
 ?>
