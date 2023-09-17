@@ -11,9 +11,13 @@ $p_optional_semicolon = $p_optional($p_string(';'));
 $p_digit_then_semicolon = $p_and_then($p_digit, $p_optional_semicolon);
 $p_digits_separated_by_comma = $p_trim($p_separated_by_1($p_digit, $p_comma));
 echo '<pre>';
-var_dump($p_terms('Potato AND NOT Chips;'));
-var_dump($p_terms('CADENA(Potato Chips);'));
-var_dump($p_terms('ASereje;'));
-var_dump($p_terms('ASereje;'));
+var_dump($p_query('Potato Chips'));
+var_dump($p_query('Potato AND Chips'));
+var_dump($p_query('Potato AND NOT Chips'));
+var_dump($p_query('CADENA(Potato Chips)'));
+var_dump($p_query('PATRON(Pot)'));
+var_dump($p_query('CAMPOS(suppliers.company)'));
+var_dump($p_query('CAMPOS(suppliers.company, suppliers.job_title)'));
+var_dump($p_query('Papas Potato AND NOT Chips AND CADENA (con chile) OR PATRON (sabri) CAMPOS (products.description)'));
 echo '</pre>';
 ?>

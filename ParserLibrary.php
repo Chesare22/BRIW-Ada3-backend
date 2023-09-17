@@ -105,6 +105,13 @@ $p_between = fn($parser_left, $parser_middle, $parser_right) =>
   );
 
 
+$p_around = fn($parser_left, $parser_middle, $parser_right) =>
+  $p_and_then(
+    $p_left($parser_left, $parser_middle),
+    $parser_right
+  );
+
+
 $p_zero_or_more = function($parser) use (&$p_zero_or_more) {
   return function($input) use (&$p_zero_or_more, $parser) {
     [$first_result, $first_value, $input_after_first_parse] = $parser($input);
@@ -116,6 +123,16 @@ $p_zero_or_more = function($parser) use (&$p_zero_or_more) {
     $values = array_merge([$first_value], $subsequent_values);
     return [Result::Ok, $values, $remaining_input];
   };
+};
+
+
+$p_exception = fn($stopper, $parser) => function($input) use ($stopper, $parser) {
+  [$stopper_result] = $stopper($input);
+  if ($stopper_result === Result::Ok) {
+    return [Result::Err, 'Invalid input', $input];
+  }
+
+  return $parser($input);
 };
 
 
