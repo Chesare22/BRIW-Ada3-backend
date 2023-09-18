@@ -57,8 +57,12 @@ $p_map = fn($mapper, $parser) => function($input) use ($mapper, $parser) {
     return $output;
   }
 
-  $mapped_value = $mapper($value);
-  return [Result::Ok, $mapped_value, $remaining];
+  try {
+    $mapped_value = $mapper($value);
+    return [Result::Ok, $mapped_value, $remaining];
+  } catch (Exception $e) {
+    return [Result::Err, $e->getMessage(), $input];
+  }
 };
 
 
