@@ -96,7 +96,7 @@ $p_operator =
   );
 
 
-$p_expressions =
+$p_tokens =
   $p_separated_by(
     $p_exception(
       $p_opener('CAMPOS'),
@@ -106,6 +106,50 @@ $p_expressions =
       )
     ),
     $p_one_or_more_whitespaces
+  );
+
+
+$is_operator = fn($token) =>
+  $token[0] === PQuery::And || $token[0] === PQuery::Or;
+
+
+# A token is a term or an operator
+$insert_missing_or_operators = function($tokens) use (&$insert_missing_or_operators, $is_operator) {
+  $number_of_tokens = count($tokens);
+  if ($number_of_tokens === 0) {
+    return [];
+  }
+
+  if ($is_operator($tokens[0])) {
+    throw new Exception("Invalid operator placement", 1);
+  }
+
+  if ($number_of_tokens === 1) {
+    return $tokens;
+  }
+
+  $rest_of_tokens = $tokens;
+  array_splice($rest_of_tokens, 0, 2);
+  if ($is_operator($tokens[1])) {
+    return [
+      $tokens[0],
+      $tokens[1],
+      ...$insert_missing_or_operators($rest_of_tokens)
+    ];
+  } else {
+    return [
+      $tokens[0],
+      [PQuery::Or],
+      ...$insert_missing_or_operators([$tokens[1], ...$rest_of_tokens])
+    ];
+  }
+};
+
+
+$p_expressions =
+  $p_map(
+    $insert_missing_or_operators,
+    $p_tokens
   );
 
 
