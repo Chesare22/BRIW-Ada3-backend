@@ -257,7 +257,7 @@ $token_to_sql_condition = function($column_names) use (&$token_to_sql_condition,
       PQuery::Keyword =>
         $separated_by_or_operators_and_around_parenthesis(
           array_map(
-            fn($column_name) => "LOWER($column_name) = LOWER('" . $sanitize($token[1]) . "')",
+            fn($column_name) => "LOWER($column_name) LIKE CONCAT('%', LOWER('" . $sanitize($token[1]) . "'), '%')",
             $column_names
           )
         ),
@@ -302,10 +302,34 @@ $query_to_sql_query = function($query_result) use ($table_to_sql_query) {
 };
 
 
+$get_column_names = function($table_name) use ($db_conection) {
+  $table_description = mysqli_fetch_all(mysqli_query($db_conection, "DESCRIBE $table_name"), MYSQLI_ASSOC);
+  return array_map(fn($description) => $description["Field"], $table_description);
+};
+
+$make_sql_request = function($table_name, $query) use ($db_conection, $get_column_names) {  
+  $column_names = $get_column_names($table_name);
+  $sql_result = mysqli_fetch_all(mysqli_query($db_conection, $query), MYSQLI_ASSOC);
+
+  return [
+    "table_name" => $table_name,
+    "column_names" => $column_names,
+    "query" => $query,
+    "result" => $sql_result,
+  ];
+};
+
 $p_sql_query =
   $p_map(
     $query_to_sql_query,
     $p_query
+  );
+
+
+$p_sql_results = 
+  $p_map(
+    fn($sql_queries_by_table) => array_map($make_sql_request, array_keys($sql_queries_by_table), array_values($sql_queries_by_table)),
+    $p_sql_query
   );
 
 ?>

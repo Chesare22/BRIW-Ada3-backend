@@ -1,23 +1,29 @@
 <?php
 include './ParseQuery.php';
 
+header("Content-type: application/json");
 
-#$dummy_query = "SELECT id, product_code, product_name FROM products";
-#$rows = mysqli_fetch_all(mysqli_query($db_conection, $dummy_query));
+$input_query = $_GET["q"];
+$query_output = $p_sql_results($input_query);
+if ($query_output[0] === Result::Err) {
+  echo json_encode([
+    "error_message" => $query_output[1],
+    "failed_input" => $query_output[2]
+  ]);
+  mysqli_close($db_conection);
+  http_response_code(400);
+  exit();
+}
 
+[,$sql_results, $no_parsed_input] = $query_output;
 
-echo '<pre>';
-# var_dump($rows);
-var_dump($p_sql_query('Potato Chips'));
-var_dump($p_sql_query('Potato AND Chips'));
-var_dump($p_sql_query('Potato AND AND NOT Chips'));
-var_dump($p_sql_query('CADENA(Potato Chips)'));
-var_dump($p_sql_query('PATRON(Pot)'));
-var_dump($p_sql_query('CAMPOS(suppliers.company)'));
-var_dump($p_sql_query('CAMPOS(suppliers.company, suppliers.job_title)'));
-var_dump($p_sql_query('Papas Potato AND NOT Chips AND CADENA (con chile) OR PATRON (sabri) CAMPOS (products.description)'));
-echo '</pre>';
+echo json_encode([
+  "input" => $input_query,
+  "no_parsed_input" => $no_parsed_input,
+  "results" => $sql_results
+]);
 
 mysqli_close($db_conection);
+http_response_code(200);
 
 ?>
