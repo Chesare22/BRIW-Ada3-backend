@@ -210,7 +210,7 @@ $fields_by_table = function($tables_so_far, $field) {
 
 $default_tables = [
   "products" => [
-    "name",
+    "product_name",
     "quantity_per_unit",
     "category"
   ]
