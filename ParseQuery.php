@@ -109,38 +109,38 @@ $p_tokens =
   );
 
 
-$is_operator = fn($token) =>
-  $token[0] === PQuery::And || $token[0] === PQuery::Or;
+$is_operator = fn($expression_token) =>
+  $expression_token[0] === PQuery::And || $expression_token[0] === PQuery::Or;
 
 
-# A token is a term or an operator
-$insert_missing_or_operators = function($tokens) use (&$insert_missing_or_operators, $is_operator) {
-  $number_of_tokens = count($tokens);
+# An expression token is a term or an operator
+$insert_missing_or_operators = function($expression_tokens) use (&$insert_missing_or_operators, $is_operator) {
+  $number_of_tokens = count($expression_tokens);
   if ($number_of_tokens === 0) {
     return [];
   }
 
-  if ($is_operator($tokens[0])) {
+  if ($is_operator($expression_tokens[0])) {
     throw new Exception("Invalid operator placement", 1);
   }
 
   if ($number_of_tokens === 1) {
-    return $tokens;
+    return $expression_tokens;
   }
 
-  $rest_of_tokens = $tokens;
+  $rest_of_tokens = $expression_tokens;
   array_splice($rest_of_tokens, 0, 2);
-  if ($is_operator($tokens[1])) {
+  if ($is_operator($expression_tokens[1])) {
     return [
-      $tokens[0],
-      $tokens[1],
+      $expression_tokens[0],
+      $expression_tokens[1],
       ...$insert_missing_or_operators($rest_of_tokens)
     ];
   } else {
     return [
-      $tokens[0],
+      $expression_tokens[0],
       [PQuery::Or],
-      ...$insert_missing_or_operators([$tokens[1], ...$rest_of_tokens])
+      ...$insert_missing_or_operators([$expression_tokens[1], ...$rest_of_tokens])
     ];
   }
 };
