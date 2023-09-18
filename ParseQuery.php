@@ -1,5 +1,6 @@
 <?php
 include './ParserLibrary.php';
+include './db_connection.php';
 
 enum PQuery {
   case Keyword;
@@ -231,4 +232,80 @@ $p_query =
     $p_expressions,
     $p_tables
   );
+
+
+$separated_by_or_operators_and_around_parenthesis = fn($values) =>
+  '(' . implode(' OR ', $values) . ')';
+
+
+$sanitize = fn($str) =>
+  mysqli_real_escape_string($db_conection, $str);
+
+
+$token_to_sql_condition = function($column_names) use (&$token_to_sql_condition, $sanitize, $separated_by_or_operators_and_around_parenthesis) {
+  return fn($token) =>
+    match ($token[0]) {
+      PQuery::And =>
+        'AND',
+
+      PQuery::Or =>
+        'OR',
+
+      PQuery::Not =>
+        '(NOT ' . $token_to_sql_condition($column_names)($token[1]) . ')',
+
+      PQuery::Keyword =>
+        $separated_by_or_operators_and_around_parenthesis(
+          array_map(
+            fn($column_name) => "LOWER($column_name) = LOWER('" . $sanitize($token[1]) . "')",
+            $column_names
+          )
+        ),
+
+      PQuery::Chain =>
+        $separated_by_or_operators_and_around_parenthesis(
+          array_map(
+            fn($column_name) => "LOWER($column_name) = LOWER('" . $sanitize($token[1]) . "')",
+            $column_names
+          )
+        ),
+
+      PQuery::Pattern =>
+        $separated_by_or_operators_and_around_parenthesis(
+          array_map(
+            fn($column_name) => "LOWER($column_name) LIKE CONCAT('%', LOWER('" . $sanitize($token[1]) . "'), '%')",
+            $column_names
+          )
+        ),
+    };
+};
+
+$table_to_sql_query = fn($expression_tokens) => function($table_name, $column_names) use ($expression_tokens, $token_to_sql_condition) {
+  $where_statement =
+    count($expression_tokens) === 0
+    ? ''
+    : "WHERE " . implode(' ', array_map($token_to_sql_condition($column_names), $expression_tokens));
+
+  return [$table_name, "SELECT * FROM $table_name $where_statement;"];
+};
+
+function array_map_assoc(callable $f, array $a) {
+    return array_column(array_map($f, array_keys($a), $a), 1, 0);
+}
+
+$query_to_sql_query = function($query_result) use ($table_to_sql_query) {
+  [$expression_tokens, $tables] = $query_result;
+  return array_map_assoc(
+    $table_to_sql_query($expression_tokens),
+    $tables
+  );
+};
+
+
+$p_sql_query =
+  $p_map(
+    $query_to_sql_query,
+    $p_query
+  );
+
 ?>
