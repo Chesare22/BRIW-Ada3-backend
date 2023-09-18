@@ -190,9 +190,45 @@ $p_fields =
   );
 
 
-$p_query =
+$fields_by_table = function($tables_so_far, $field) {
+  [$table_name, $field_name] = $field;
+
+  if (array_key_exists($table_name, $tables_so_far)) {
+    $new_table = $tables_so_far[$table_name];
+    array_push($new_table, $field_name);
+    $new_tables = $tables_so_far;
+    $new_tables[$table_name] = $new_table;
+    return $new_tables;
+  }
+
+  $new_tables = $tables_so_far;
+  $new_tables[$table_name] = [$field_name];
+  return $new_tables;
+};
+
+
+$default_tables = [
+  "products" => [
+    "name",
+    "quantity_per_unit",
+    "category"
+  ]
+];
+
+
+$p_tables = 
+  $p_map(
+    fn($fields) =>
+      match ($fields[0]) {
+        Maybe::Nothing => $default_tables,
+        Maybe::Some => array_reduce($fields[1], $fields_by_table, []),
+      },
+    $p_optional($p_fields)
+  );
+
+$p_query = 
   $p_and_then(
     $p_expressions,
-    $p_optional($p_fields)
+    $p_tables
   );
 ?>
