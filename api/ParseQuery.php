@@ -309,13 +309,13 @@ $get_column_names = function($table_name) use ($db_conection) {
 
 $make_sql_request = function($table_name, $query) use ($db_conection, $get_column_names) {  
   $column_names = $get_column_names($table_name);
-  $sql_result = mysqli_fetch_all(mysqli_query($db_conection, $query), MYSQLI_ASSOC);
+  $sql_result = mysqli_fetch_all(mysqli_query($db_conection, $query));
 
   return [
     "table_name" => $table_name,
     "column_names" => $column_names,
     "query" => $query,
-    "result" => $sql_result,
+    "rows" => $sql_result,
   ];
 };
 
