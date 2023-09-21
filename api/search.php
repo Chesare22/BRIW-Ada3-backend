@@ -21,7 +21,7 @@ if ($query_output[0] === Result::Err) {
 echo json_encode([
   "input" => $input_query,
   "no_parsed_input" => $no_parsed_input,
-  "results" => $sql_results
+  "tables" => $sql_results
 ]);
 
 mysqli_close($db_conection);
