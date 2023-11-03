@@ -1,6 +1,26 @@
 <?php
 include './pdo.php';
 
+// Copied from https://stackoverflow.com/a/67111853/13194448
+function array_every(array $arr, callable $predicate) {
+    foreach ($arr as $e) {
+        if (!call_user_func($predicate, $e)) {
+             return false;
+        }
+    }
+
+    return true;
+}
+
+$filenames = array_map("basename", $_FILES["files"]["name"]);
+
+$is_txt = fn($filename) => str_ends_with($filename, '.txt');
+
+if (!array_every($filenames, $is_txt)) {
+  echo "Not all files are txt";
+  exit();
+}
+
 $documentos = [];
 
 for ($i=0; $i < count($_FILES["files"]["name"]); $i++) { 
