@@ -58,6 +58,24 @@ $tokens_in_files =
   array_map($p_tokens, $sanitized_file_contents);
 
 
+for ($i=0; $i < count($tokens_in_files); $i++) {
+  $tokens_in_file = $tokens_in_files[$i];
+
+  if ($tokens_in_file[0] === Result::Err) {
+    echo $tokens_in_file[1];
+    http_response_code(400);
+    exit();
+  }
+
+  if (count($tokens_in_file[1]) === 0) {
+    $filename = $filenames[$i];
+    echo "The file '$filename' is empty";
+    http_response_code(400);
+    exit();
+  }
+}
+
+
 $documentos = [];
 
 for ($i=0; $i < count($_FILES["files"]["name"]); $i++) { 
