@@ -28,7 +28,7 @@ $file_contents =
 $sanitize = fn($content) =>
   strtolower(
     iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE',
-      preg_replace('/\p{P}/', ' ',
+      preg_replace('/\p{P}/', '',
         $content
       )
     )
