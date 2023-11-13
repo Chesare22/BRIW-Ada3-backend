@@ -13,6 +13,11 @@ function array_every(array $arr, callable $predicate) {
     return true;
 }
 
+// Copied from https://gist.github.com/davidrjonas/8f820ab0c75534b45189eba1d1fbeb23
+function array_flatmap(callable $fn, $array) {
+    return array_merge(...array_map($fn, $array));
+}
+
 $filenames = array_map("basename", $_FILES["files"]["name"]);
 
 $is_txt = fn($filename) => str_ends_with($filename, '.txt');
@@ -74,6 +79,32 @@ for ($i=0; $i < count($tokens_in_files); $i++) {
     exit();
   }
 }
+
+
+$total_tokens =
+  array_unique(
+    array_flatmap(
+      fn($tokens_in_file) => $tokens_in_file[1],
+      $tokens_in_files
+    )
+  );
+
+foreach($total_tokens as $token) {
+  try {
+    $pdo
+      ->prepare("INSERT INTO `Vocabulario` (token) VALUES ('$token')")
+      ->execute();
+  } catch (\Throwable $th) {}
+}
+
+$vocabulary =
+  array_map(
+    fn($token) =>
+      $pdo
+        ->query("SELECT * FROM `Vocabulario` WHERE token = '$token'")
+        ->fetch(),
+    $total_tokens
+  );
 
 
 $documentos = [];
