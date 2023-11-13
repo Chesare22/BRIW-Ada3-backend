@@ -18,6 +18,15 @@ function array_flatmap(callable $fn, $array) {
     return array_merge(...array_map($fn, $array));
 }
 
+// Copied from https://stackoverflow.com/a/35882000/13194448
+function array_find($xs, $f) {
+  foreach ($xs as $x) {
+    if (call_user_func($f, $x) === true)
+      return $x;
+  }
+  return null;
+}
+
 $filenames = array_map("basename", $_FILES["files"]["name"]);
 
 $is_txt = fn($filename) => str_ends_with($filename, '.txt');
@@ -106,6 +115,12 @@ $vocabulary =
     $total_tokens
   );
 
+$get_token_id = fn($token) =>
+  array_find(
+    $vocabulary,
+    fn($vocabulary_item) => $vocabulary_item['token'] === $token
+  )['id_token'];
+
 
 $documentos = [];
 
@@ -116,20 +131,33 @@ for ($i=0; $i < count($_FILES["files"]["name"]); $i++) {
   ];
 }
 
-
+$document_ids = [];
 $sql = "INSERT INTO Documentos(nombre_archivo, archivo, fecha) VALUES (:nombre_archivo, :archivo, now())";
 
 try {
   foreach ($documentos as $documento) {
     $statement = $pdo->prepare($sql);
     $statement->execute($documento);
+    $document_ids[] = $pdo->lastInsertId();
   }
-  echo "The files have been uploaded.";
 
 } catch (\Throwable $th) {
   echo $th;
 }
 
+
+for ($i=0; $i < count($tokens_in_files); $i++) { 
+  $tokens_in_file = $tokens_in_files[$i][1];
+  $document_id = $document_ids[$i];
+
+  foreach (array_count_values($tokens_in_file) as $token => $frequency) {
+    $token_id = $get_token_id($token);
+    
+    $pdo
+      ->prepare("INSERT INTO `Posting` (id_token, id_documento, frecuencia) VALUES ($token_id, $document_id, $frequency)")
+      ->execute();
+  }
+}
 
 
 ?>
