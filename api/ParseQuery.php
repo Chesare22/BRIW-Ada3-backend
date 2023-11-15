@@ -156,7 +156,12 @@ $separated_by_or_operators_and_around_parenthesis = fn($values) =>
 
 
 $sanitize = fn($str) =>
-  mysqli_real_escape_string($db_conection, $str);
+  strtolower(
+    mysqli_real_escape_string(
+      $db_conection,
+      $str
+    )
+  );
 
 
 $token_to_sql_condition = function($column_names) use (&$token_to_sql_condition, $sanitize, $separated_by_or_operators_and_around_parenthesis) {
@@ -174,7 +179,7 @@ $token_to_sql_condition = function($column_names) use (&$token_to_sql_condition,
       PQuery::Keyword =>
         $separated_by_or_operators_and_around_parenthesis(
           array_map(
-            fn($column_name) => "LOWER($column_name) LIKE CONCAT('%', LOWER('" . $sanitize($token[1]) . "'), '%')",
+            fn($column_name) => "$column_name LIKE CONCAT('%','" . $sanitize($token[1]) . "', '%')",
             $column_names
           )
         ),
@@ -182,7 +187,7 @@ $token_to_sql_condition = function($column_names) use (&$token_to_sql_condition,
       PQuery::Chain =>
         $separated_by_or_operators_and_around_parenthesis(
           array_map(
-            fn($column_name) => "LOWER($column_name) = LOWER('" . $sanitize($token[1]) . "')",
+            fn($column_name) => "$column_name = '" . $sanitize($token[1]) . "'",
             $column_names
           )
         ),
@@ -190,7 +195,7 @@ $token_to_sql_condition = function($column_names) use (&$token_to_sql_condition,
       PQuery::Pattern =>
         $separated_by_or_operators_and_around_parenthesis(
           array_map(
-            fn($column_name) => "LOWER($column_name) LIKE CONCAT('%', LOWER('" . $sanitize($token[1]) . "'), '%')",
+            fn($column_name) => "$column_name LIKE CONCAT('%', '" . $sanitize($token[1]) . "', '%')",
             $column_names
           )
         ),
