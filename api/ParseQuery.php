@@ -204,7 +204,15 @@ $token_to_sql_condition = function($column_names) use (&$token_to_sql_condition,
 
 
 $query_to_sql_query = function($expression_tokens) use ($token_to_sql_condition) {
-  return "SELECT * FROM Vocabulario WHERE " . implode(' ', array_map($token_to_sql_condition(["token"]), $expression_tokens));
+  $condition = implode(' ', array_map($token_to_sql_condition(["Vocabulario.token"]), $expression_tokens));
+  return <<<EOD
+  SELECT Documentos.id_documento, Documentos.nombre_archivo, Vocabulario.token, Posting.frecuencia
+    FROM (SELECT * from Vocabulario WHERE $condition) AS Vocabulario
+  INNER JOIN Posting
+    ON Posting.id_token = Vocabulario.id_token
+  INNER JOIN Documentos
+    ON Posting.id_documento = Documentos.id_documento
+  EOD;
 };
 
 
