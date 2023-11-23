@@ -206,13 +206,57 @@ $token_to_sql_condition = function($column_names) use (&$token_to_sql_condition,
 $query_to_sql_query = function($expression_tokens) use ($token_to_sql_condition) {
   $condition = implode(' ', array_map($token_to_sql_condition(["Vocabulario.token"]), $expression_tokens));
   return <<<EOD
-  SELECT Documentos.id_documento, Documentos.nombre_archivo, Vocabulario.token, Posting.frecuencia
+  SELECT Documentos.id_documento, Documentos.nombre_archivo, Posting.frecuencia
     FROM (SELECT * from Vocabulario WHERE $condition) AS Vocabulario
   INNER JOIN Posting
     ON Posting.id_token = Vocabulario.id_token
   INNER JOIN Documentos
     ON Posting.id_documento = Documentos.id_documento
+  ORDER BY Documentos.id_documento
   EOD;
+};
+
+
+const DOCUMENT_ID = 0;
+const TOKEN_FREQUENCY = 2;
+
+
+$group_by_score = function($scored_documents, $document_score) {
+  if (!isset($scored_documents[0])){
+    $document_score[TOKEN_FREQUENCY] = (int) $document_score[TOKEN_FREQUENCY];
+    return [$document_score];
+  }
+
+  $previous_document_score = $scored_documents[0];
+  if ($previous_document_score[DOCUMENT_ID] === $document_score[DOCUMENT_ID]) {
+    $new_score = [
+      $document_score[0],
+      $document_score[1],
+      $document_score[TOKEN_FREQUENCY] + $previous_document_score[TOKEN_FREQUENCY]
+    ];
+    $scored_documents[0] = $new_score;
+    return $scored_documents;
+  }
+
+  $document_score[TOKEN_FREQUENCY] = (int) $document_score[TOKEN_FREQUENCY];
+  return [$document_score, ...$scored_documents];
+};
+
+
+$sort_by_relevance = function($documents_from_query) use ($group_by_score) {
+  $documents_with_score =
+    array_reduce(
+      $documents_from_query,
+      $group_by_score,
+      []
+    );
+  
+  usort(
+    $documents_with_score,
+    fn($a, $b) => $b[TOKEN_FREQUENCY] <=> $a[TOKEN_FREQUENCY]
+  );
+
+  return $documents_with_score;
 };
 
 
@@ -221,9 +265,9 @@ $get_column_names = function($table_name) use ($db_conection) {
   return array_map(fn($description) => $description["Field"], $table_description);
 };
 
-$make_sql_request = function($table_name, $query) use ($db_conection, $get_column_names) {  
+$make_sql_request = function($table_name, $query) use ($db_conection, $get_column_names, $sort_by_relevance) {  
   $column_names = $get_column_names($table_name);
-  $sql_result = mysqli_fetch_all(mysqli_query($db_conection, $query));
+  $sql_result = $sort_by_relevance(mysqli_fetch_all(mysqli_query($db_conection, $query)));
 
   return [
     "table_name" => $table_name,
