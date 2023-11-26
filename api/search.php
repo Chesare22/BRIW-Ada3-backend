@@ -4,7 +4,11 @@ include './ParseQuery.php';
 header("Content-type: application/json");
 header("Access-Control-Allow-Origin: *");
 
-$input_query = $_GET["q"];
+$input_query =
+  iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE',
+    $_GET["q"]
+  );
+
 $query_output = $p_sql_results($input_query);
 if ($query_output[0] === Result::Err) {
   echo json_encode([
