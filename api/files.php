@@ -127,12 +127,18 @@ $documentos = [];
 for ($i=0; $i < count($_FILES["files"]["name"]); $i++) { 
   $documentos[] = [
     'nombre_archivo' => basename($_FILES["files"]["name"][$i]),
-    'archivo' => file_get_contents($_FILES["files"]["tmp_name"][$i])
+    'archivo' => file_get_contents($_FILES["files"]["tmp_name"][$i]),
+    'tipo' => $_FILES["files"]["type"][$i],
+    'size' => $_FILES["files"]["size"][$i]
   ];
 }
 
 $document_ids = [];
-$sql = "INSERT INTO Documentos(nombre_archivo, archivo, fecha) VALUES (:nombre_archivo, :archivo, now())";
+$sql = <<<EOD
+  INSERT INTO
+  Documentos(nombre_archivo, archivo, fecha, mime_type, size)
+  VALUES (:nombre_archivo, :archivo, now(), :tipo, :size)
+EOD;
 
 try {
   foreach ($documentos as $documento) {
